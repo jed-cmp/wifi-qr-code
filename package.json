@@ -1,0 +1,14 @@
+{
+  "name": "wifi-qr-code",
+  "version": "1.0.0",
+  "description": "Generate a WiFi QR code PDF for easy sharing and printing",
+  "main": "generate.js",
+  "scripts": {
+    "generate": "node generate.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "pdfkit": "^0.15.1",
+    "qrcode": "^1.5.4"
+  }
+}
