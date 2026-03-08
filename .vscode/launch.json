@@ -8,6 +8,17 @@
       "program": "${workspaceFolder}/generate.js",
       "envFile": "${workspaceFolder}/.env",
       "console": "integratedTerminal"
+    },
+    {
+      "name": "Generate Wi-Fi QR PDF (Compact)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/generate.js",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "COMPACT": "true"
+      },
+      "console": "integratedTerminal"
     }
   ]
 }

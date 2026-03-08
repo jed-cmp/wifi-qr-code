@@ -8,7 +8,8 @@ const path = require('path');
 // ── Validate environment variables ────────────────────────────────────────────
 const SSID = process.env.WIFI_SSID;
 const PASSWORD = process.env.WIFI_PASSWORD;
-const OUTPUT = process.env.OUTPUT || 'wifi-qr.pdf';
+const COMPACT = process.env.COMPACT === 'true';
+const OUTPUT = process.env.OUTPUT || (COMPACT ? 'wifi-qr-compact.pdf' : 'wifi-qr.pdf');
 
 const missing = [];
 if (!SSID) missing.push('WIFI_SSID');
@@ -190,7 +191,126 @@ async function generate() {
   console.log(`✓ PDF generated: ${outputPath}`);
 }
 
-generate().catch((err) => {
+// ── Compact grid: 6 coaster-sized cards (2 × 3) on one A4 sheet ─────────────
+async function generateCompact() {
+  const qrDataUrl = await QRCode.toDataURL(wifiString, {
+    errorCorrectionLevel: 'H',
+    margin: 2,
+    width: 280,
+  });
+
+  const cardHtml = `
+    <div class="card">
+      <img src="${qrDataUrl}" alt="Wi-Fi QR Code">
+      <div class="card-text">
+        <div class="field">
+          <span class="field-label">Network</span>
+          <span class="field-value">${escapeHtml(SSID)}</span>
+        </div>
+        <div class="field">
+          <span class="field-label">Password</span>
+          <span class="field-value">${escapeHtml(PASSWORD)}</span>
+        </div>
+      </div>
+    </div>`;
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 210mm;
+      height: 297mm;
+      background: #ffffff;
+      font-family: Helvetica, Arial, sans-serif;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: repeat(5, 1fr);
+      width: 210mm;
+      height: 297mm;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      border: 2px solid #000000;
+      border-radius: 8px;
+      margin: 4px;
+      padding: 2px 4px;
+    }
+
+    .card img {
+      width: 90px;
+      height: 90px;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .card-text {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      max-width: 140px;
+    }
+
+    .field-label {
+      font-size: 6px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #888888;
+    }
+
+    .field-value {
+      font-size: 9px;
+      font-weight: 600;
+      color: #000000;
+      word-break: break-all;
+      line-height: 1.3;
+    }
+  </style>
+</head>
+<body>
+  <div class="grid">
+    ${Array(10).fill(cardHtml).join('\n')}
+  </div>
+</body>
+</html>`;
+
+  const outputPath = path.resolve(OUTPUT);
+
+  const browser = await puppeteer.launch();
+  try {
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.pdf({
+      path: outputPath,
+      format: 'A4',
+      printBackground: true,
+    });
+  } finally {
+    await browser.close();
+  }
+
+  console.log(`✓ Compact PDF generated (10 cards): ${outputPath}`);
+}
+
+(COMPACT ? generateCompact() : generate()).catch((err) => {
   console.error('Failed to generate PDF:', err.message);
   process.exit(1);
 });
