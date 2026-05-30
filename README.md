@@ -1,6 +1,6 @@
 # Wi-Fi QR Code PDF Generator
 
-Generates a printable PDF containing a Wi-Fi QR code that phone cameras can scan to connect instantly — no typing required.
+Generates a printable PDF containing a Wi-Fi QR code that phone cameras can scan to connect
 
 Two output modes are supported:
 
